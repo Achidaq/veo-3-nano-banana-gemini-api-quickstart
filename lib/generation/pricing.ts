@@ -17,6 +17,15 @@ const CREDITS_PER_SECOND: Record<
   standard: { "720p": 8, "1080p": 8, "4k": 12 },
 };
 
+const PROVIDER_USD_PER_SECOND: Record<
+  (typeof VEO_MODELS)[VeoModel],
+  Partial<Record<VeoResolution, number>>
+> = {
+  lite: { "720p": 0.05, "1080p": 0.08 },
+  fast: { "720p": 0.1, "1080p": 0.12, "4k": 0.3 },
+  standard: { "720p": 0.4, "1080p": 0.4, "4k": 0.6 },
+};
+
 export function quoteVeoCredits(input: {
   model: string;
   resolution: string;
@@ -38,9 +47,10 @@ export function quoteVeoCredits(input: {
   const resolution = input.resolution as VeoResolution;
   const durationSeconds = input.durationSeconds as VeoDuration;
   const tier = VEO_MODELS[model];
-  const rate = CREDITS_PER_SECOND[tier][resolution];
+  const creditRate = CREDITS_PER_SECOND[tier][resolution];
+  const providerRate = PROVIDER_USD_PER_SECOND[tier][resolution];
 
-  if (!rate) {
+  if (!creditRate || !providerRate) {
     throw new Error("Resolution is not supported by this Veo model");
   }
 
@@ -53,6 +63,7 @@ export function quoteVeoCredits(input: {
     tier,
     resolution,
     durationSeconds,
-    credits: rate * durationSeconds,
+    credits: creditRate * durationSeconds,
+    estimatedProviderCostUsd: providerRate * durationSeconds,
   };
 }
