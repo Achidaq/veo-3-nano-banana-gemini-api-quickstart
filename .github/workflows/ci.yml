@@ -4,7 +4,6 @@ on:
   push:
     branches:
       - main
-      - build/supabase-foundation
   pull_request:
     branches:
       - main
@@ -37,9 +36,9 @@ jobs:
           name: generated-package-lock
           path: package-lock.json
           retention-days: 1
-      - name: Audit production dependencies
-        run: npm audit --omit=dev --audit-level=high
       - name: Lint
         run: npm run lint
       - name: Build
         run: npm run build
+      - name: Audit production dependencies
+        run: npm audit --omit=dev --audit-level=high
