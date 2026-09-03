@@ -1,24 +1,24 @@
 import { NextResponse } from "next/server";
 import { GoogleGenAI } from "@google/genai";
-
-if (!process.env.GEMINI_API_KEY) {
-  throw new Error("GEMINI_API_KEY environment variable is not set.");
-}
-
-const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
+import { getImageGenerationAccess } from "@/lib/generation/image-access";
 
 export async function POST(req: Request) {
+  const access = await getImageGenerationAccess();
+  if (!access.ok) {
+    return NextResponse.json({ error: access.error }, { status: access.status });
+  }
+
   try {
-    const body = await req.json();
-    const prompt = (body?.prompt as string) || "";
-    const model = (body?.model as string) || "imagen-4.0-fast-generate-001";
+    const body = (await req.json()) as { prompt?: string };
+    const prompt = body.prompt?.trim() || "";
 
     if (!prompt) {
       return NextResponse.json({ error: "Missing prompt" }, { status: 400 });
     }
 
+    const ai = new GoogleGenAI({ apiKey: access.apiKey });
     const resp = await ai.models.generateImages({
-      model,
+      model: "imagen-4.0-fast-generate-001",
       prompt,
       config: {
         aspectRatio: "16:9",
@@ -27,7 +27,7 @@ export async function POST(req: Request) {
 
     const image = resp.generatedImages?.[0]?.image;
     if (!image?.imageBytes) {
-      return NextResponse.json({ error: "No image returned" }, { status: 500 });
+      return NextResponse.json({ error: "No image returned" }, { status: 502 });
     }
 
     return NextResponse.json({
@@ -37,10 +37,7 @@ export async function POST(req: Request) {
       },
     });
   } catch (error) {
-    console.error("Error generating image:", error);
-    return NextResponse.json(
-      { error: "Failed to generate image" },
-      { status: 500 }
-    );
+    console.error("Error generating image with Imagen", error);
+    return NextResponse.json({ error: "Failed to generate image" }, { status: 500 });
   }
 }

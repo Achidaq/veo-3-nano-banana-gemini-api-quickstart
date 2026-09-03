@@ -21,22 +21,21 @@ const ModelSelector: React.FC<ModelSelectorProps> = ({
   const getModelsForMode = (currentMode: StudioMode) => {
     if (currentMode === "create-video") {
       return [
-        "veo-3.0-generate-001",
-        "veo-3.0-fast-generate-001",
-        "veo-2.0-generate-001",
+        "veo-3.1-lite-generate-preview",
+        "veo-3.1-fast-generate-preview",
+        "veo-3.1-generate-preview",
       ];
-    } else {
-      // For image modes
-      return ["gemini-2.5-flash-image-preview", "imagen-4.0-fast-generate-001"];
     }
+
+    return ["gemini-2.5-flash-image-preview", "imagen-4.0-fast-generate-001"];
   };
 
   const models = getModelsForMode(mode);
 
   const formatModelName = (model: string) => {
-    if (model.includes("veo-3.0-fast")) return "Veo 3 - Fast";
-    if (model.includes("veo-3.0")) return "Veo 3";
-    if (model.includes("veo-2.0")) return "Veo 2";
+    if (model === "veo-3.1-lite-generate-preview") return "Veo 3.1 Lite";
+    if (model === "veo-3.1-fast-generate-preview") return "Veo 3.1 Fast";
+    if (model === "veo-3.1-generate-preview") return "Veo 3.1 Standard";
     if (model.includes("gemini-2.5")) return "Gemini 2.5 Flash";
     if (model.includes("imagen-4.0")) return "Imagen 4.0 Fast";
     return model;
@@ -48,7 +47,7 @@ const ModelSelector: React.FC<ModelSelectorProps> = ({
         aria-label="Model selector"
         value={selectedModel}
         onChange={(e) => setSelectedModel(e.target.value)}
-        className="pl-3 pr-8 py-2 text-sm rounded-md border  focus:outline-none focus:ring-2 focus:ring-gray-500 appearance-none"
+        className="pl-3 pr-8 py-2 text-sm rounded-md border focus:outline-none focus:ring-2 focus:ring-gray-500 appearance-none"
       >
         {models.map((model) => (
           <option key={model} value={model}>
