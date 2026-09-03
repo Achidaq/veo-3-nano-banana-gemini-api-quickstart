@@ -4,6 +4,11 @@ export const VEO_MODELS = {
   "veo-3.1-generate-preview": "standard",
 } as const;
 
+const LEGACY_MODEL_ALIASES: Record<string, keyof typeof VEO_MODELS> = {
+  "veo-3.0-generate-001": "veo-3.1-lite-generate-preview",
+  "veo-3.0-fast-generate-001": "veo-3.1-fast-generate-preview",
+};
+
 export type VeoModel = keyof typeof VEO_MODELS;
 export type VeoResolution = "720p" | "1080p" | "4k";
 export type VeoDuration = 4 | 6 | 8;
@@ -31,7 +36,9 @@ export function quoteVeoCredits(input: {
   resolution: string;
   durationSeconds: number;
 }) {
-  if (!(input.model in VEO_MODELS)) {
+  const normalizedModel = LEGACY_MODEL_ALIASES[input.model] || input.model;
+
+  if (!(normalizedModel in VEO_MODELS)) {
     throw new Error("Unsupported Veo model");
   }
 
@@ -43,7 +50,7 @@ export function quoteVeoCredits(input: {
     throw new Error("Unsupported Veo duration");
   }
 
-  const model = input.model as VeoModel;
+  const model = normalizedModel as VeoModel;
   const resolution = input.resolution as VeoResolution;
   const durationSeconds = input.durationSeconds as VeoDuration;
   const tier = VEO_MODELS[model];
