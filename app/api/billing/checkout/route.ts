@@ -56,6 +56,8 @@ export async function POST(request: Request) {
         plan_id: plan.id,
         status: "pending",
         provider: "paystack",
+        billing_email: user.email,
+        provider_plan_code: plan.paystack_plan_code,
       })
       .select("id")
       .single();
