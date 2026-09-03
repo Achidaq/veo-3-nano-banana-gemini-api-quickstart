@@ -6,19 +6,41 @@ import {
 } from "@/lib/paystack";
 import { fulfillSuccessfulTransaction } from "@/lib/billing/fulfillment";
 
-type PaystackEvent = {
-  event?: string;
-  data?: Record<string, any>;
+type PaystackCustomer = {
+  customer_code?: string;
+  email?: string;
 };
 
-async function reconcileSubscriptionCreate(data: Record<string, any>) {
+type PaystackPlan = {
+  plan_code?: string;
+};
+
+type PaystackSubscription = {
+  subscription_code?: string;
+};
+
+type PaystackEventData = {
+  reference?: string;
+  subscription_code?: string;
+  email_token?: string;
+  customer?: PaystackCustomer;
+  plan?: PaystackPlan | string | null;
+  subscription?: PaystackSubscription;
+};
+
+type PaystackEvent = {
+  event?: string;
+  data?: PaystackEventData;
+};
+
+async function reconcileSubscriptionCreate(data: PaystackEventData) {
   const admin = createAdminClient();
-  const subscriptionCode = data.subscription_code as string | undefined;
-  const emailToken = data.email_token as string | undefined;
-  const customerCode = data.customer?.customer_code as string | undefined;
-  const customerEmail = data.customer?.email as string | undefined;
+  const subscriptionCode = data.subscription_code;
+  const emailToken = data.email_token;
+  const customerCode = data.customer?.customer_code;
+  const customerEmail = data.customer?.email;
   const planCode =
-    (data.plan?.plan_code as string | undefined) ||
+    (typeof data.plan === "object" && data.plan ? data.plan.plan_code : undefined) ||
     (typeof data.plan === "string" ? data.plan : undefined);
 
   if (!subscriptionCode) return;
@@ -57,10 +79,11 @@ async function reconcileSubscriptionCreate(data: Record<string, any>) {
     .eq("id", localId);
 }
 
-async function markSubscription(data: Record<string, any>, status: "cancelled" | "past_due") {
-  const code =
-    (data.subscription?.subscription_code as string | undefined) ||
-    (data.subscription_code as string | undefined);
+async function markSubscription(
+  data: PaystackEventData,
+  status: "cancelled" | "past_due"
+) {
+  const code = data.subscription?.subscription_code || data.subscription_code;
   if (!code) return;
 
   const admin = createAdminClient();
@@ -110,7 +133,7 @@ export async function POST(request: Request) {
 
     switch (event.event) {
       case "charge.success": {
-        const reference = data.reference as string | undefined;
+        const reference = data.reference;
         if (!reference) throw new Error("charge.success missing reference");
         await fulfillSuccessfulTransaction(reference);
         break;
