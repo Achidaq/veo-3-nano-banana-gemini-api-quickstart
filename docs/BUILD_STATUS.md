@@ -18,6 +18,7 @@ Foundation hardening: phases 1-5 of `docs/PRODUCT_ROADMAP.md`.
 - Paid SaaS schema migration committed with plans, subscriptions, payments, credit balances/ledger, assets, favorites, webhook events, generation costs, audit events, RLS, and project/generation ownership integrity.
 - Transactional credit engine migration committed with idempotent grant/reserve/capture/release RPCs restricted to service role.
 - Paystack reconciliation migration committed.
+- Added `supabase/verify/production_foundation.sql` to deterministically verify required tables, RLS, policies, ownership constraints, service-role-only credit RPCs, idempotency uniqueness, balance invariants, subscription uniqueness, triggers, and plan activation state after migration.
 - Server-only Paystack client added with checkout initialization, transaction verification, HMAC-SHA512 webhook verification, and timing-safe signature comparison.
 - Paystack checkout, callback, idempotent fulfillment, webhook replay protection, subscription activation, cancellation, and failed-payment handling added.
 - Billing UI added with plan, subscription, available-credit, and reserved-credit state.
@@ -33,10 +34,10 @@ Foundation hardening: phases 1-5 of `docs/PRODUCT_ROADMAP.md`.
 - CI production dependency audit passes.
 - CI lint passes.
 - CI full Next.js production build passes.
-- PR #1 is now mergeable.
+- PR #1 is mergeable.
 
 ## Important current limitations
-1. The live Supabase migrations have NOT been applied yet. The Supabase write connector is unavailable, so live schema/RLS/credit RPCs have not been changed or verified.
+1. The live Supabase migrations have NOT been applied yet. On 2026-09-03 the Supabase migration tools appeared briefly, then the connector disabled before `list_migrations` could complete. No live database mutation should be assumed.
 2. Paystack checkout cannot be exercised until a Paystack test secret and real Paystack test plan codes are configured and matching local plan rows are activated.
 3. The existing Vercel production site is still the earlier direct-deployed shell. The verified GitHub branch has not been promoted.
 4. CI regenerated a current `package-lock.json` and exported it as an artifact, but the connector cannot directly replace the repository lockfile from that artifact. The checked-in lockfile therefore remains stale even though CI installation/build is verified.
@@ -59,7 +60,7 @@ Server only:
 Future R2 variables are documented in `.env.example` but are not active yet.
 
 ## Next actions
-1. Restore Supabase write access, apply all committed migrations, and run security advisors.
+1. Restore Supabase write access, apply all committed migrations, then immediately run `supabase/verify/production_foundation.sql` and security advisors.
 2. Verify composite project/generation ownership, RLS isolation, and all four credit RPCs with isolated test users.
 3. Configure Paystack test-mode secret + monthly plan codes and seed/activate the matching local plans only after final GHS prices are approved.
 4. Run signup -> verified email -> pricing -> Paystack test checkout -> webhook -> active subscription -> exactly-once credit grant end to end.
