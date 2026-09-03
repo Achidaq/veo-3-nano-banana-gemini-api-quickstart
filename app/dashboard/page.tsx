@@ -1,110 +1,60 @@
-"use client";
-
-import { FormEvent, useEffect, useState } from "react";
 import Link from "next/link";
-import AuthGate from "@/components/auth/AuthGate";
-import { createProject, listProjects } from "@/lib/supabase/projects";
+import { redirect } from "next/navigation";
+import { createClient } from "@/lib/supabase/server";
+import { createProjectAction } from "./actions";
+import { signOut } from "@/app/auth/actions";
 
-type Project = {
-  id: string;
-  title: string;
-  description?: string | null;
-  updated_at: string;
-};
+export default async function DashboardPage() {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
 
-function DashboardContent() {
-  const [projects, setProjects] = useState<Project[]>([]);
-  const [title, setTitle] = useState("");
-  const [loading, setLoading] = useState(true);
-  const [busy, setBusy] = useState(false);
-  const [error, setError] = useState("");
+  if (!user) redirect("/login?next=/dashboard");
 
-  async function load() {
-    try {
-      const rows = await listProjects();
-      setProjects(rows);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Could not load projects");
-    } finally {
-      setLoading(false);
-    }
-  }
-
-  useEffect(() => {
-    load();
-  }, []);
-
-  async function submit(event: FormEvent) {
-    event.preventDefault();
-    if (!title.trim()) return;
-    setBusy(true);
-    setError("");
-    try {
-      const project = await createProject(title.trim());
-      setProjects((current) => [project, ...current]);
-      setTitle("");
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Could not create project");
-    } finally {
-      setBusy(false);
-    }
-  }
+  const { data: projects, error } = await supabase
+    .from("projects")
+    .select("id,title,description,updated_at")
+    .order("updated_at", { ascending: false });
 
   return (
-    <div className="min-h-screen bg-gray-100 px-6 py-10 text-stone-900">
+    <main className="min-h-screen bg-neutral-950 px-6 py-10 text-white">
       <div className="mx-auto max-w-6xl">
         <div className="mb-10 flex flex-wrap items-end justify-between gap-4">
           <div>
-            <p className="text-sm font-medium text-stone-500">Veo Studio</p>
+            <p className="text-sm font-medium text-violet-300">VEO AI STUDIO</p>
             <h1 className="mt-1 text-4xl font-semibold tracking-tight">Your projects</h1>
-            <p className="mt-2 text-stone-500">Create a project, then use the generator and keep the work organized.</p>
+            <p className="mt-2 text-white/55">Create a project, generate videos, and keep every asset attached to your account.</p>
           </div>
-          <Link href="/" className="rounded-xl bg-stone-900 px-5 py-3 text-sm font-medium text-white">
-            Open generator
-          </Link>
+          <div className="flex gap-3">
+            <Link href="/" className="rounded-xl border border-white/10 bg-white/5 px-5 py-3 text-sm font-medium">Open generator</Link>
+            <form action={signOut}><button className="rounded-xl bg-white px-5 py-3 text-sm font-semibold text-black">Sign out</button></form>
+          </div>
         </div>
 
-        <form onSubmit={submit} className="mb-8 flex max-w-xl gap-3">
-          <input
-            value={title}
-            onChange={(e) => setTitle(e.target.value)}
-            placeholder="New project name"
-            className="min-w-0 flex-1 rounded-xl border border-stone-200 bg-white px-4 py-3 outline-none focus:border-stone-400"
-          />
-          <button disabled={busy} className="rounded-xl bg-white px-5 py-3 font-medium shadow-sm disabled:opacity-50">
-            {busy ? "Creating…" : "Create"}
-          </button>
+        <div className="mb-8 rounded-2xl border border-white/10 bg-white/[0.04] p-4 text-sm text-white/60">
+          Signed in as <span className="text-white">{user.email}</span>
+        </div>
+
+        <form action={createProjectAction} className="mb-8 flex max-w-xl gap-3">
+          <input name="title" required maxLength={120} placeholder="New project name" className="min-w-0 flex-1 rounded-xl border border-white/10 bg-white/[0.06] px-4 py-3 outline-none focus:border-violet-400" />
+          <button className="rounded-xl bg-violet-500 px-5 py-3 font-semibold hover:bg-violet-400">Create</button>
         </form>
 
-        {error ? <p className="mb-6 text-sm text-red-600">{error}</p> : null}
-
-        {loading ? (
-          <p className="text-stone-500">Loading projects…</p>
-        ) : projects.length === 0 ? (
-          <div className="rounded-3xl border border-dashed border-stone-300 bg-white/50 p-12 text-center text-stone-500">
-            No projects yet. Create the first one above.
-          </div>
+        {error ? (
+          <div className="rounded-2xl border border-red-400/30 bg-red-400/10 p-5 text-red-200">Could not load your projects.</div>
+        ) : !projects?.length ? (
+          <div className="rounded-3xl border border-dashed border-white/15 bg-white/[0.03] p-12 text-center text-white/50">No projects yet. Create the first one above.</div>
         ) : (
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {projects.map((project) => (
-              <div key={project.id} className="rounded-2xl bg-white p-5 shadow-sm">
+              <article key={project.id} className="rounded-2xl border border-white/10 bg-white/[0.05] p-5">
                 <h2 className="font-semibold">{project.title}</h2>
-                <p className="mt-2 text-xs text-stone-400">
-                  Updated {new Date(project.updated_at).toLocaleString()}
-                </p>
-              </div>
+                {project.description ? <p className="mt-2 text-sm text-white/50">{project.description}</p> : null}
+                <p className="mt-4 text-xs text-white/35">Updated {new Date(project.updated_at).toLocaleString()}</p>
+              </article>
             ))}
           </div>
         )}
       </div>
-    </div>
-  );
-}
-
-export default function DashboardPage() {
-  return (
-    <AuthGate>
-      <DashboardContent />
-    </AuthGate>
+    </main>
   );
 }
