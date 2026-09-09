@@ -1,3 +1,13 @@
+# About this fork
+
+This repository is a fork of [Google's Gemini API Veo / Nano Banana quickstart](https://github.com/google-gemini/veo-3-nano-banana-gemini-api-quickstart).
+
+The fork adds a [Veo AI Studio product roadmap](docs/PRODUCT_ROADMAP.md). The roadmap describes a proposed product direction; it is not evidence that the listed billing, credit, storage, or security features have been implemented here.
+
+The original quickstart code and documentation below are credited to the upstream contributors. Model availability, pricing, and setup requirements should be checked against current provider documentation before running it.
+
+---
+
 # Gemini API Veo 3 & Nano Banana Quickstart
 
 A NextJs quickstart for creating and editing images and videos using Google's latest Gemini API models including [Veo 3](https://ai.google.dev/gemini-api/docs/video), [Imagen 4](https://ai.google.dev/gemini-api/docs/imagen), and [Gemini 2.5 Flash Image aka nano banana](https://ai.google.dev/gemini-api/docs/image-generations). 
